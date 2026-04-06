@@ -1,0 +1,88 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, "Microsoft JhengHei", "Segoe UI", sans-serif; }
+body { background: linear-gradient(135deg, #d4d4d8 0%, #a1a1aa 100%); min-height: 100vh; color: #1a1a1a; }
+
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-box { background: rgba(255,255,255,0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 48px 40px; border-radius: 24px; box-shadow: 0 30px 80px rgba(0,0,0,0.15); max-width: 420px; width: 100%; border: 1px solid rgba(255,255,255,0.6); }
+.login-box .logo { width: 56px; height: 56px; background: #1a1a1a; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: white; font-size: 24px; }
+.login-box h1 { text-align: center; font-size: 22px; margin-bottom: 6px; font-weight: 700; }
+.login-box .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 32px; }
+.login-box label { display: block; margin: 16px 0 8px; color: #555; font-weight: 600; font-size: 13px; }
+.login-box select, .login-box input { width: 100%; padding: 14px 16px; border: 1.5px solid rgba(0,0,0,0.08); border-radius: 12px; font-size: 15px; background: rgba(255,255,255,0.9); transition: all 0.2s; }
+.login-box select:focus, .login-box input:focus { outline: none; border-color: #1a1a1a; background: white; }
+.login-box button { width: 100%; padding: 14px; background: #1a1a1a; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 24px; cursor: pointer; transition: all 0.2s; }
+.login-box button:hover { background: #000; transform: translateY(-1px); }
+.error { color: #e74c3c; text-align: center; margin-top: 12px; min-height: 20px; font-size: 13px; }
+
+.app { display: flex; min-height: 100vh; padding: 20px; gap: 16px; }
+
+.rail { width: 64px; background: #1a1a1a; border-radius: 20px; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); flex-shrink: 0; }
+.rail-top { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.rail-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #888; cursor: pointer; transition: all 0.2s; font-size: 18px; }
+.rail-icon:hover { color: white; background: rgba(255,255,255,0.08); }
+.rail-icon.active { background: rgba(255,255,255,0.15); color: white; }
+.rail-bottom { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; }
+
+.sidebar { width: 280px; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.6); flex-shrink: 0; overflow-y: auto; max-height: calc(100vh - 40px); }
+.window-dots { display: flex; gap: 6px; margin-bottom: 20px; }
+.window-dots span { width: 12px; height: 12px; border-radius: 50%; }
+.window-dots span:nth-child(1) { background: #ff5f56; }
+.window-dots span:nth-child(2) { background: #ffbd2e; }
+.window-dots span:nth-child(3) { background: #27c93f; }
+.user-info { display: flex; align-items: center; gap: 12px; padding: 8px 4px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 16px; }
+.avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; }
+.user-name { font-weight: 700; font-size: 14px; }
+.user-email { font-size: 11px; color: #888; }
+.sync-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #11998e; margin-right: 4px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.section-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 8px 8px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; cursor: pointer; font-size: 14px; color: #333; transition: all 0.15s; margin-bottom: 2px; }
+.nav-item:hover { background: rgba(0,0,0,0.04); }
+.nav-item.active { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-weight: 600; }
+.nav-item .icon { font-size: 16px; }
+.logout-btn { width: 100%; margin-top: 16px; padding: 10px; background: rgba(231,76,60,0.1); color: #e74c3c; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.logout-btn:hover { background: rgba(231,76,60,0.15); }
+
+.content-area { flex: 1; background: rgba(255,255,255,0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 32px 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.6); overflow-y: auto; max-height: calc(100vh - 40px); }
+.page-title { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.page-sub { color: #888; font-size: 14px; margin-bottom: 28px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.card { background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
+.card .label { font-size: 13px; color: #888; margin-bottom: 10px; }
+.card .value { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
+.card.revenue .value { color: #11998e; }
+.card.expense .value { color: #eb3349; }
+.card.profit .value { color: #1a1a1a; }
+.card .badge { display: inline-block; margin-left: 8px; font-size: 11px; padding: 3px 8px; border-radius: 8px; background: #e8f5e9; color: #2e7d32; font-weight: 600; vertical-align: middle; }
+
+.breakdown { background: white; border-radius: 16px; padding: 20px 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
+.breakdown h4 { font-size: 15px; margin-bottom: 14px; font-weight: 700; }
+.breakdown .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 14px; }
+.breakdown .row:last-child { border-bottom: none; }
+.breakdown .row .amt { font-weight: 700; }
+
+.form-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
+.form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.form-row input { flex: 1; min-width: 130px; padding: 11px 14px; border: 1.5px solid rgba(0,0,0,0.08); border-radius: 10px; font-size: 14px; background: #fafafa; }
+.form-row input:focus { outline: none; border-color: #1a1a1a; background: white; }
+.form-row button { padding: 11px 24px; background: #1a1a1a; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; }
+.form-row button:hover { background: #000; }
+
+.table-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
+table { width: 100%; border-collapse: collapse; }
+th { background: #fafafa; padding: 14px 20px; text-align: left; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 14px 20px; border-top: 1px solid rgba(0,0,0,0.05); font-size: 14px; }
+.del-btn { background: rgba(231,76,60,0.1); color: #e74c3c; border: none; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.del-btn:hover { background: rgba(231,76,60,0.2); }
+.empty { text-align: center; color: #aaa; padding: 40px !important; }
+.total-bar { background: #1a1a1a; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 14px; margin-top: 16px; font-weight: 600; }
+.total-bar .big { font-size: 20px; }
+
+@media (max-width: 900px) {
+  .app { flex-direction: column; padding: 12px; }
+  .rail { width: 100%; flex-direction: row; padding: 12px; border-radius: 16px; }
+  .rail-top { flex-direction: row; flex: 1; justify-content: flex-start; }
+  .sidebar { width: 100%; max-height: none; }
+  .content-area { padding: 24px 20px; max-height: none; }
+  .page-title { font-size: 22px; }
+}
