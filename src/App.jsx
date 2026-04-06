@@ -22,7 +22,8 @@ const DEFAULT_SETTINGS = {
     { id: 'trash', name: '垃圾支出', type: 'expense', icon: '🗑️', section: 'Expenses' },
     { id: 'salary', name: '薪水支出', type: 'expense', icon: '👥', section: 'Expenses' },
     { id: 'ads', name: '廣告支出', type: 'expense', icon: '📢', section: 'Expenses' },
-  ]
+  ],
+  vendors: {}
 }
 
 const PERIODS = [
@@ -108,7 +109,6 @@ export default function App() {
     return () => unsubs.forEach(u => u())
   }, [store, user, settings.categories])
 
-  // 登入後自動選第一間門店
   useEffect(() => {
     if (user && settingsLoaded && !store && settings.stores.length > 0) {
       setStore(settings.stores[0])
@@ -398,7 +398,7 @@ function Content({ settings, store, currentTab, data, sumCat }) {
 
   const cat = settings.categories.find(c => c.id === currentTab)
   if (!cat) return <div className="content-area"><div className="page-title">找不到此頁</div></div>
-  return <CategoryView store={store} cat={cat} items={data[cat.id] || []} />
+  return <CategoryView store={store} cat={cat} items={data[cat.id] || []} settings={settings} />
 }
 
 /* ---------- 共用：載入全部門店資料 ---------- */
@@ -813,12 +813,15 @@ function TrendsView({ settings, store }) {
 }
 
 /* ---------- CATEGORY VIEW ---------- */
-function CategoryView({ store, cat, items }) {
+function CategoryView({ store, cat, items, settings }) {
   const today = new Date().toISOString().split('T')[0]
   const [date, setDate] = useState(today)
   const [desc, setDesc] = useState('')
   const [amt, setAmt] = useState('')
+  const [editMode, setEditMode] = useState(false)
+  const [pendingDeletes, setPendingDeletes] = useState(new Set())
 
+  const vendorList = (settings.vendors && settings.vendors[cat.id]) || []
   const total = items.reduce((s, i) => s + Number(i.amount || 0), 0)
 
   const add = async () => {
@@ -831,46 +834,141 @@ function CategoryView({ store, cat, items }) {
     } catch (e) { alert('新增失敗：' + e.message) }
   }
 
-  const del = async (id) => {
-    if (!confirm('確定刪除？')) return
-    try { await deleteDoc(doc(db, 'stores', store, cat.id, id)) }
-    catch (e) { alert('刪除失敗：' + e.message) }
+  const togglePending = (id) => {
+    const next = new Set(pendingDeletes)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setPendingDeletes(next)
+  }
+
+  const enterEditMode = () => {
+    setEditMode(true)
+    setPendingDeletes(new Set())
+  }
+
+  const cancelEdit = () => {
+    if (pendingDeletes.size > 0) {
+      if (!confirm('放棄所有未儲存的刪除？')) return
+    }
+    setEditMode(false)
+    setPendingDeletes(new Set())
+  }
+
+  const saveDeletes = async () => {
+    if (pendingDeletes.size === 0) {
+      setEditMode(false)
+      return
+    }
+    if (!confirm(`確定要刪除 ${pendingDeletes.size} 筆資料嗎？\n⚠ 此動作無法復原`)) return
+    try {
+      for (const id of pendingDeletes) {
+        await deleteDoc(doc(db, 'stores', store, cat.id, id))
+      }
+      setEditMode(false)
+      setPendingDeletes(new Set())
+    } catch (e) {
+      alert('刪除失敗：' + e.message)
+    }
   }
 
   return (
     <div className="content-area">
       <div className="page-title">{cat.icon} {cat.name}</div>
       <div className="page-sub">{cat.type === 'revenue' ? '記錄每日營業收入' : '記錄此項支出明細'} ・ {store}</div>
+
       <div className="form-card">
         <div className="form-row">
           <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-          <input type="text" placeholder="項目/廠商名稱" value={desc}
-            onChange={e => setDesc(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && add()} />
+          {vendorList.length > 0 ? (
+            <select
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+              style={{flex: 1, minWidth: 130, padding: '11px 14px', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 14, background: '#fafafa'}}
+            >
+              <option value="">-- 選擇項目 --</option>
+              {vendorList.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          ) : (
+            <input type="text" placeholder="項目/廠商名稱（可在設定新增）" value={desc}
+              onChange={e => setDesc(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && add()} />
+          )}
           <input type="number" placeholder="金額" min="0" value={amt}
             onChange={e => setAmt(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && add()} />
           <button onClick={add}>+ 新增</button>
         </div>
+        {vendorList.length === 0 && (
+          <div style={{fontSize: 11, color: '#999', marginTop: 8}}>
+            💡 提示：到左下角齒輪設定，可為此分類新增常用項目，輸入時會變成下拉選單
+          </div>
+        )}
       </div>
+
+      {/* 編輯/儲存控制列 */}
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
+        <div style={{fontSize: 13, color: '#888'}}>
+          {editMode ? (
+            pendingDeletes.size > 0
+              ? <span style={{color: '#eb3349', fontWeight: 600}}>⚠ 已標記 {pendingDeletes.size} 筆待刪除</span>
+              : '點擊「刪除」標記要刪除的項目'
+          ) : `共 ${items.length} 筆資料`}
+        </div>
+        <div style={{display: 'flex', gap: 8}}>
+          {editMode ? (
+            <>
+              <button
+                onClick={cancelEdit}
+                style={{padding: '8px 16px', background: 'rgba(0,0,0,0.05)', color: '#333', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600}}
+              >取消</button>
+              <button
+                onClick={saveDeletes}
+                style={{padding: '8px 16px', background: pendingDeletes.size > 0 ? '#eb3349' : '#888', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600}}
+              >💾 儲存變更</button>
+            </>
+          ) : (
+            <button
+              onClick={enterEditMode}
+              style={{padding: '8px 16px', background: '#1a1a1a', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600}}
+            >✏️ 編輯模式</button>
+          )}
+        </div>
+      </div>
+
       <div className="table-card">
         <table>
           <thead>
-            <tr><th>日期</th><th>項目</th><th>金額</th><th style={{ textAlign: 'right' }}>操作</th></tr>
+            <tr>
+              <th>日期</th>
+              <th>項目</th>
+              <th>金額</th>
+              {editMode && <th style={{ textAlign: 'right' }}>操作</th>}
+            </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan="4" className="empty">尚無資料，請新增第一筆</td></tr>
-            ) : items.map(it => (
-              <tr key={it.id}>
-                <td>{it.date}</td>
-                <td>{it.desc}</td>
-                <td><b>{fmt(it.amount)}</b></td>
-                <td style={{ textAlign: 'right' }}>
-                  <button className="del-btn" onClick={() => del(it.id)}>刪除</button>
-                </td>
-              </tr>
-            ))}
+              <tr><td colSpan={editMode ? 4 : 3} className="empty">尚無資料，請新增第一筆</td></tr>
+            ) : items.map(it => {
+              const isPending = pendingDeletes.has(it.id)
+              return (
+                <tr key={it.id} style={isPending ? {background: '#ffebee', opacity: 0.6, textDecoration: 'line-through'} : {}}>
+                  <td>{it.date}</td>
+                  <td>{it.desc}</td>
+                  <td><b>{fmt(it.amount)}</b></td>
+                  {editMode && (
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="del-btn"
+                        onClick={() => togglePending(it.id)}
+                        style={isPending ? {background: '#888', color: 'white'} : {}}
+                      >
+                        {isPending ? '↺ 復原' : '刪除'}
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -884,7 +982,11 @@ function CategoryView({ store, cat, items }) {
 
 /* ---------- SETTINGS MODAL ---------- */
 function SettingsModal({ settings, onSave, onClose }) {
-  const [draft, setDraft] = useState(JSON.parse(JSON.stringify(settings)))
+  const [draft, setDraft] = useState(() => {
+    const s = JSON.parse(JSON.stringify(settings))
+    if (!s.vendors) s.vendors = {}
+    return s
+  })
 
   const updateField = (field, value) => setDraft({ ...draft, [field]: value })
 
@@ -894,7 +996,7 @@ function SettingsModal({ settings, onSave, onClose }) {
   }
   const addStore = () => setDraft({ ...draft, stores: [...draft.stores, '新門店'] })
   const delStore = (i) => {
-    if (!confirm(`確定刪除「${draft.stores[i]}」？\n⚠ 該門店的 Firebase 資料不會被刪除，只是從列表隱藏。`)) return
+    if (!confirm(`確定要刪除「${draft.stores[i]}」？\n⚠ 該門店的 Firebase 資料不會被刪除，只是從列表隱藏。\n記得按「儲存設定」才會生效。`)) return
     setDraft({ ...draft, stores: draft.stores.filter((_, idx) => idx !== i) })
   }
 
@@ -910,8 +1012,30 @@ function SettingsModal({ settings, onSave, onClose }) {
     }]
   })
   const delCat = (i) => {
-    if (!confirm(`確定刪除分類「${draft.categories[i].name}」？\n⚠ 該分類已輸入的資料仍會保留在 Firebase。`)) return
+    if (!confirm(`確定要刪除分類「${draft.categories[i].name}」？\n⚠ 該分類已輸入的資料仍會保留在 Firebase。\n記得按「儲存設定」才會生效。`)) return
     setDraft({ ...draft, categories: draft.categories.filter((_, idx) => idx !== i) })
+  }
+
+  // 廠商管理
+  const getVendors = (catId) => draft.vendors[catId] || []
+  const addVendor = (catId) => {
+    const vendors = { ...draft.vendors }
+    vendors[catId] = [...(vendors[catId] || []), '新項目']
+    setDraft({ ...draft, vendors })
+  }
+  const updateVendor = (catId, i, value) => {
+    const vendors = { ...draft.vendors }
+    const list = [...(vendors[catId] || [])]
+    list[i] = value
+    vendors[catId] = list
+    setDraft({ ...draft, vendors })
+  }
+  const delVendor = (catId, i) => {
+    const name = draft.vendors[catId][i]
+    if (!confirm(`確定要刪除項目「${name}」？\n記得按「儲存設定」才會生效。`)) return
+    const vendors = { ...draft.vendors }
+    vendors[catId] = vendors[catId].filter((_, idx) => idx !== i)
+    setDraft({ ...draft, vendors })
   }
 
   return (
@@ -955,6 +1079,25 @@ function SettingsModal({ settings, onSave, onClose }) {
               </div>
             ))}
             <button className="add-btn" onClick={addCat}>+ 新增分類</button>
+          </div>
+
+          <div className="setting-group">
+            <h3>各分類常用項目（廠商）</h3>
+            <div style={{fontSize: 12, color: '#888', marginBottom: 12}}>
+              為每個分類設定常用項目，輸入資料時會變成下拉選單
+            </div>
+            {draft.categories.map(c => (
+              <div key={c.id} style={{marginBottom: 18, padding: 14, background: '#fafafa', borderRadius: 10, border: '1px solid #eee'}}>
+                <div style={{fontWeight: 700, fontSize: 13, marginBottom: 10}}>{c.icon} {c.name}</div>
+                {getVendors(c.id).map((v, i) => (
+                  <div key={i} className="list-row">
+                    <input value={v} onChange={e => updateVendor(c.id, i, e.target.value)} placeholder="項目名稱" />
+                    <button className="del-btn" onClick={() => delVendor(c.id, i)}>刪除</button>
+                  </div>
+                ))}
+                <button className="add-btn" onClick={() => addVendor(c.id)}>+ 新增項目</button>
+              </div>
+            ))}
           </div>
 
           <div style={{background: '#e8f5e9', padding: 12, borderRadius: 10, fontSize: 12, color: '#2e7d32', marginBottom: 10}}>
